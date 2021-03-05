@@ -1,0 +1,28 @@
+api:
+  insecure: true
+  dashboard: true
+#  debug: true
+providers:
+  docker:
+    ## for use in swarm mode ##
+    # endpoint: tcp://192.168.16.204:2375
+    # swarmMode: true
+    exposedbydefault: false
+    watch: true
+entrypoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+certificatesResolvers:
+  cloudflaredns:
+    acme:
+      email: <your email address>
+      storage: acme.json
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
+log:
+  level: "DEBUG"

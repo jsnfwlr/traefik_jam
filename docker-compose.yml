@@ -1,0 +1,69 @@
+version: '3.8'
+services:
+  traefik:
+    image: traefik
+    networks:
+      - local
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./.configuration:/configuration
+      - ./.configuration/traefik.yml:/etc/traefik/traefik.yml
+      - ./.configuration/acme.json:/acme.json
+    environment:
+      CF_API_KEY: <Cloudflare_global_api_key>
+      CF_API_EMAIL: <Cloudflare_account_email_address>
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8989:8080" # API
+    ## for use in standalone mode ##
+    container_name: traefik
+    restart: unless-stopped
+    ## for use in swarm mode ##
+    # deploy:
+    #   mode: global
+    #   placement:
+    #     constraints:
+    #       - node.role==manager
+    #       - node.labels.loadbalancer==true
+    #   restart_policy:
+    #     condition: on-failure
+    #     delay: 5s
+    #     max_attempts: 3
+    #     window: 120s
+  whoami:
+    image: containous/whoami
+    networks:
+      - local
+    ## for use in standalone mode ##
+    container_name: traefik
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.example.org`)"
+      - "traefik.http.routers.whoami.tls=true"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certResolver=cloudflaredns"
+      - "traefik.http.services.whoami.loadbalancer.server.port=80"
+    ## for use in swarm mode ##
+    # deploy:
+    #   mode: global
+    #   placement:
+    #     constraints:
+    #       - node.role==worker
+    #   restart_policy:
+    #     condition: on-failure
+    #     delay: 5s
+    #     max_attempts: 3
+    #     window: 120s
+    #   labels:
+    #     - "traefik.enable=true"
+    #     - "traefik.http.routers.whoami.rule=Host(`whoami.example.org`)"
+    #     - "traefik.http.routers.whoami.tls=true"
+    #     - "traefik.http.routers.whoami.entrypoints=websecure"
+    #     - "traefik.http.routers.whoami.tls.certResolver=cloudflaredns"
+    #     - "traefik.http.services.whoami.loadbalancer.server.port=80"
+
+networks:
+  local:
+    external: true
